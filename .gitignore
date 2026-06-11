@@ -1,0 +1,63 @@
+# Python caches and local environments
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.hypothesis/
+.ipynb_checkpoints/
+.venv/
+venv/
+env/
+.python-version
+
+# Environment files
+.env
+.env.*
+*.local
+
+# Packaging and coverage artifacts
+build/
+dist/
+*.egg-info/
+.coverage
+.coverage.*
+htmlcov/
+
+# Generated workflow, backtest, and dashboard outputs
+reports/
+outputs/
+alpha_mining_registry/
+
+# Local data scratch areas
+crypto_data/raw/
+crypto_data/tmp/
+tmp/
+temp/
+scratch/
+
+# Temporary experiment artifacts
+*_tmp.csv
+*_temp.csv
+*_debug.csv
+*_local.csv
+*_tmp.json
+*_temp.json
+*_debug.json
+*_local.json
+
+# Local scratch/vendor folders
+.dist/
+.sixth/
+
+# OS/editor files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Logs and local databases
+*.log
+*.sqlite
+*.db

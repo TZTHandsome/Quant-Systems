@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Crypto Paper Trading Desk</title>
+  <link rel="stylesheet" href="./dashboard.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="side-panel">
+      <div class="brand-block">
+        <div class="eyebrow">Crypto Alpha Desk</div>
+        <h1>Paper Trading Console</h1>
+        <p>输入因子表达式和 paper 时间段，直接回放 30 币组合的每日买卖与盈亏。</p>
+      </div>
+
+      <section class="input-card">
+        <div class="section-heading">
+          <div>
+            <h2>运行参数</h2>
+            <p id="dataset-summary">正在读取本地数据…</p>
+          </div>
+        </div>
+
+        <label class="form-label" for="factors-input">因子表达式</label>
+        <textarea id="factors-input" rows="8" placeholder="支持每行一个，或最外层逗号分隔；支持 long: / short: 前缀；手动权重可写成 long: expr | weight=1.2"></textarea>
+
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="paper-start-date">Paper 开始日期</label>
+            <input id="paper-start-date" class="form-input" type="date">
+          </div>
+          <div>
+            <label class="form-label" for="paper-end-date">Paper 结束日期</label>
+            <input id="paper-end-date" class="form-input" type="date">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="paper-bars">最近 Bars</label>
+            <input id="paper-bars" class="form-input" type="number" min="2" value="90">
+          </div>
+          <div>
+            <label class="form-label" for="initial-capital">初始资金</label>
+            <input id="initial-capital" class="form-input" type="number" min="1000" step="1000" value="100000">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="position-limit">单币上限</label>
+            <input id="position-limit" class="form-input" type="number" min="0.01" max="1.0" step="0.01" value="0.15">
+          </div>
+          <div>
+            <label class="form-label" for="gross-leverage">Gross Leverage</label>
+            <input id="gross-leverage" class="form-input" type="number" min="0.1" max="3.0" step="0.05" value="1.20">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="smoothing">Smoothing</label>
+            <input id="smoothing" class="form-input" type="number" min="0.0" max="0.95" step="0.05" value="0.35">
+          </div>
+          <div class="checkbox-row">
+            <label class="checkbox-label">
+              <input id="market-neutral" type="checkbox">
+              <span>Market Neutral</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="market-adaptation">市场状态适配</label>
+            <select id="market-adaptation" class="form-input">
+              <option value="off">关闭</option>
+              <option value="standard" selected>标准</option>
+              <option value="strong">强化</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="bull-follow-strength">牛市跟随强度</label>
+            <input id="bull-follow-strength" class="form-input" type="number" min="0.00" max="0.95" step="0.05" value="0.65">
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="factor-weight-scheme">因子合成方式</label>
+            <select id="factor-weight-scheme" class="form-input">
+              <option value="equal" selected>等权</option>
+              <option value="fitness">按 Fitness 加权</option>
+              <option value="manual">手动权重</option>
+              <option value="regression">系统回归估权</option>
+            </select>
+          </div>
+          <div>
+            <label class="form-label" for="bull-trend-preference">牛市趋势偏好</label>
+            <select id="bull-trend-preference" class="form-input">
+              <option value="off">关闭</option>
+              <option value="standard" selected>标准</option>
+              <option value="strong">强化</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div>
+            <label class="form-label" for="auto-weight-lookback-bars">自动估权回看 Bars</label>
+            <input id="auto-weight-lookback-bars" class="form-input" type="number" min="30" step="10" value="252">
+          </div>
+          <div class="hint-block">
+            <div class="hint-card">
+              <strong>提示</strong>
+              <span>`manual` 模式从文本框读取 `| weight=`；`fitness` / `regression` 会用 paper 前历史自动评估。</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="button-row">
+          <button id="run-button" class="primary-button" type="button">Run Paper Trading</button>
+          <button id="load-defaults-button" class="secondary-button" type="button">Load Default Factors</button>
+        </div>
+
+        <div class="progress-block">
+          <div class="progress-meta">
+            <span id="progress-label">等待运行</span>
+            <span id="progress-value">0%</span>
+          </div>
+          <div class="progress-track">
+            <div id="progress-fill" class="progress-fill"></div>
+          </div>
+        </div>
+      </section>
+    </aside>
+
+    <main class="main-content">
+      <section class="hero-band">
+        <div class="hero-text">
+          <h2>Crypto Paper Trading Report</h2>
+          <p>展示最终盈亏、每日调仓、持仓结构，以及相对 BTC / 等权 / 市值加权基准的表现。</p>
+        </div>
+        <div class="status-pill" id="run-status">Ready</div>
+      </section>
+
+      <section class="metrics-grid">
+        <article class="metric-card">
+          <div class="metric-label">Final Equity</div>
+          <div class="metric-value" id="metric-final-equity">--</div>
+          <div class="metric-sub" id="metric-total-return">--</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">Trades</div>
+          <div class="metric-value" id="metric-trades">--</div>
+          <div class="metric-sub" id="metric-turnover">--</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">BTC Benchmark</div>
+          <div class="metric-value" id="metric-btc-return">--</div>
+          <div class="metric-sub">主比较基准</div>
+        </article>
+        <article class="metric-card">
+          <div class="metric-label">Equal Weight / Market Cap</div>
+          <div class="metric-value" id="metric-eq-return">--</div>
+          <div class="metric-sub" id="metric-cap-return">--</div>
+        </article>
+      </section>
+
+      <section class="chart-section">
+        <div class="section-header">
+          <div>
+            <h3>Equity Curve</h3>
+            <p>策略净值与三层 benchmark 对照</p>
+          </div>
+        </div>
+        <div class="chart-card">
+          <svg id="equity-chart" viewBox="0 0 960 320" preserveAspectRatio="none"></svg>
+          <div class="chart-legend">
+            <span><i class="legend-swatch strategy"></i>Strategy</span>
+            <span><i class="legend-swatch btc"></i>BTC</span>
+            <span><i class="legend-swatch equal"></i>Equal Weight</span>
+            <span><i class="legend-swatch cap"></i>Market Cap</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="content-grid">
+        <section class="content-card">
+          <div class="section-header">
+            <div>
+              <h3>Selected Factors</h3>
+              <p>展示方向、最终权重、估权来源与关键评估指标</p>
+            </div>
+          </div>
+          <div id="selected-factors" class="selected-tags"></div>
+        </section>
+
+        <section class="content-card">
+          <div class="section-header">
+            <div>
+              <h3>Daily Execution</h3>
+              <p>每天买卖、资金变化和换手</p>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="data-table" id="daily-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Equity Before</th>
+                  <th>Equity After</th>
+                  <th>Net PnL</th>
+                  <th>Return</th>
+                  <th>Turnover</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <section class="content-grid">
+        <section class="content-card">
+          <div class="section-header">
+            <div>
+              <h3>Trades</h3>
+              <p>每日买入/卖出哪些币、权重变化多少</p>
+            </div>
+          </div>
+          <div class="table-wrap tall">
+            <table class="data-table" id="trades-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Symbol</th>
+                  <th>Side</th>
+                  <th>Before</th>
+                  <th>Target</th>
+                  <th>After</th>
+                  <th>Delta</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="content-card">
+          <div class="section-header">
+            <div>
+              <h3>Positions</h3>
+              <p>持仓、估算仓位和每笔持仓 PnL</p>
+            </div>
+          </div>
+          <div class="table-wrap tall">
+            <table class="data-table" id="positions-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Symbol</th>
+                  <th>Weight</th>
+                  <th>Units</th>
+                  <th>Entry Open</th>
+                  <th>Exit Close</th>
+                  <th>Gross PnL</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <script src="./dashboard.js"></script>
+</body>
+</html>
