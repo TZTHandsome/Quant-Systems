@@ -160,6 +160,59 @@ http://127.0.0.1:8050
 
 The dashboard is local-only and paper-only. It is meant for simulation and monitoring, not brokerage execution.
 
+## Paper Trading Preview
+
+If you add a screenshot at `docs/images/paper_trading_dashboard.png`, GitHub will render it directly in this section:
+
+![Paper Trading Dashboard](docs/images/paper_trading_dashboard.png)
+
+This preview is useful for showing:
+
+- the portfolio-level equity curve
+- benchmark comparisons versus BTC, equal weight, and market-cap baselines
+- selected factors, weights, and execution details
+
+Recommended asset path:
+
+```text
+docs/images/paper_trading_dashboard.png
+```
+
+You can replace the image later with an updated dashboard screenshot without changing the README structure.
+
+## Backtest Output Example
+
+The workflow writes a research report and a final backtest report under the selected output directory.
+
+Typical generated files:
+
+- `reports/<run_name>/workflow_report.md`
+- `reports/<run_name>/selected_factors_summary.csv`
+- `reports/<run_name>/backtest/backtest_report.md`
+- `reports/<run_name>/backtest/backtest_metrics.json`
+
+Example summary format:
+
+```text
+Final equity:      $106,226.76
+Total return:      +6.23%
+Trades:            2881
+Mean turnover:     0.042
+BTC benchmark:     +2.81%
+Equal weight:      +3.62%
+Market cap:        +1.25%
+```
+
+If you want a visual sample in the repository, place a report screenshot at:
+
+```text
+docs/images/backtest_report_sample.png
+```
+
+Then GitHub will render it here:
+
+![Backtest Report Sample](docs/images/backtest_report_sample.png)
+
 ## Factor Input Format for Paper Trading
 
 Paste one factor per line into the dashboard input box.
@@ -191,6 +244,30 @@ short: rank(ts_rank(upper_shadow_ratio, 30)) | weight=11.114797037293057
   - Preferred explicit workflow entrypoint.
 - `python -m alpha_mining.run_crypto_dashboard`
   - Local dashboard and paper-trading entrypoint.
+
+## How To Customize
+
+Other users can adapt the repository without changing the overall workflow structure.
+
+Common customization points:
+
+- Replace the local dataset under `crypto_data/binance_crypto30_daily/` with a different crypto panel.
+- Adjust the trade universe through `crypto_data/binance_crypto30_daily/universe.csv` or files under `universes/`.
+- Modify data ingestion logic in `data_crypto/`.
+- Extend feature engineering in `features_crypto/engineer.py`.
+- Change factor generation, validation, or selection logic in `alpha_mining/`.
+- Adjust portfolio construction behavior in `alpha_mining/portfolio_construction.py`.
+- Use a different `--output-dir` for each experiment run.
+- Submit custom factor lists through the dashboard for paper-trading experiments.
+
+Suggested workflow for new experiments:
+
+1. Keep the committed dataset as a reproducible baseline.
+2. Copy the workflow command and change only one dimension at a time, such as data, factor logic, or evaluation window.
+3. Write results to a new `--output-dir`.
+4. Compare the new report against previous runs instead of overwriting old outputs.
+
+If you plan to support alternative datasets or longer-term extensions, it is a good idea to create separate subdirectories under `crypto_data/` and keep the original `binance_crypto30_daily/` folder as the baseline example.
 
 ## Notes
 
