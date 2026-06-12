@@ -1,4 +1,4 @@
-# Crypto Alpha Mining System
+# Crypto Alpha Mining Quant-System
 
 A Python-based crypto research repository for alpha discovery, offline backtesting, and local paper-trading experiments.
 
